@@ -1,0 +1,10 @@
+*.k5.*
+kdc.conf
+service.keyfile
+kadm5.acl
+
+*.mdb
+**/sals2
+**/schema
+**/slapd.d
+ldap.conf

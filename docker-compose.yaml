@@ -1,0 +1,95 @@
+services:
+  ldap-master:
+    build:
+      context: ldap/build
+      dockerfile: Dockerfile
+    container_name: ldap-master
+    ports:
+      - "389:389"
+    environment:
+      - ROLE=master
+      - DEBIAN_FRONTEND=noninteractive
+      - INIT=false
+      - LDAP_DEBUG=8
+      - LDAP_BASE_DN=dc=example,dc=com
+      - LDAP_REPLICATOR_PASSWORD=password
+      - LDAP_CONFIG_PASSWORD=password
+      - LDAP_ADMIN_PASSWORD=password
+      - KERBEROS_LDAP_CONTAINER=cn=krbContainer
+      - KERBEROS_KDC_PASSWORD=password
+      - KERBEROS_KADMIN_PASSWORD=password
+      - KERBEROS_MASTER_PASSWORD=password
+      - KERBEROS_REALM=EXAMPLE.COM
+    volumes:
+      - ./ldap/volumes/master/data:/var/lib/ldap
+      - ./ldap/volumes/master/conf:/etc/ldap
+      - ./ldap/volumes/scripts:/app
+    restart: unless-stopped
+  ldap-slave:
+    build:
+      context: ldap/build
+      dockerfile: Dockerfile
+    container_name: ldap-slave
+    ports:
+      - "389:389"
+    environment:
+      - ROLE=slave    
+      - DEBIAN_FRONTEND=noninteractive
+      - INIT=false
+      - LDAP_DEBUG=8
+      - LDAP_BASE_DN=dc=example,dc=com
+      - LDAP_REPLICATOR_PASSWORD=password
+      - LDAP_MASTER_URL=ldap://ldap-master:389
+    volumes:
+      - ./ldap/volumes/slave/data:/var/lib/ldap
+      - ./ldap/volumes/slave/conf:/etc/ldap
+      - ./ldap/volumes/scripts:/app
+    restart: unless-stopped
+  kdc-master:
+    build:
+      context: kdc/build
+      dockerfile: Dockerfile
+    container_name: kdc-master
+    ports:
+      - "88:88"
+    environment:
+      - ROLE=master
+      - DEBIAN_FRONTEND=noninteractive
+      - INIT=false
+      - LDAP_BASE_DN=dc=example,dc=com
+      - LDAP_ADMIN_PASSWORD=password
+      - LDAP_MASTER_URL=ldap://ldap-master:389
+      - KERBEROS_DOMAIN=example.com
+      - KERBEROS_LDAP_CONTAINER=cn=krbContainer
+      - KERBEROS_KDC_PASSWORD=password
+      - KERBEROS_KADMIN_PASSWORD=password
+      - KERBEROS_MASTER_PASSWORD=password
+      - KERBEROS_REALM=EXAMPLE.COM
+    volumes:
+      - ./kdc/volumes/master/conf:/etc/krb5kdc
+      - ./kdc/volumes/scripts:/app
+    restart: unless-stopped
+  kdc-slave:
+    build:
+      context: kdc/build
+      dockerfile: Dockerfile
+    container_name: kdc-slave
+    ports:
+      - "88:88"
+    environment:
+      - ROLE=slave
+      - DEBIAN_FRONTEND=noninteractive
+      - INIT=false
+      - LDAP_BASE_DN=dc=example,dc=com
+      - LDAP_ADMIN_PASSWORD=password
+      - LDAP_MASTER_URL=ldap://ldap-master:389
+      - KERBEROS_DOMAIN=example.com
+      - KERBEROS_LDAP_CONTAINER=cn=krbContainer
+      - KERBEROS_KDC_PASSWORD=password
+      - KERBEROS_KADMIN_PASSWORD=password
+      - KERBEROS_MASTER_PASSWORD=password
+      - KERBEROS_REALM=EXAMPLE.COM
+    volumes:
+      - ./kdc/volumes/slave/conf:/etc/krb5kdc
+      - ./kdc/volumes/scripts:/app
+    restart: unless-stopped

@@ -1,0 +1,35 @@
+[kdcdefaults]
+    kdc_ports = 88
+
+[realms]
+    $KERBEROS_REALM = {
+	kdc = localhost
+	admin_server = localhost
+	default_domain = $KERBEROS_DOMAIN
+	database_module = openldap_ldapconf
+    }
+
+[dbdefaults]
+        ldap_kerberos_container_dn = $KERBEROS_LDAP_CONTAINER,$LDAP_BASE_DN
+
+[dbmodules]
+        openldap_ldapconf = {
+                db_library = kldap
+
+		# if either of these is false, then the ldap_kdc_dn needs to
+				# have write access
+				disable_last_success = true
+				disable_lockout  = true
+
+                # this object needs to have read rights on
+                # the realm container, principal container and realm sub-trees
+                ldap_kdc_dn = "uid=kdc-service,$LDAP_BASE_DN"
+
+                # this object needs to have read and write rights on
+                # the realm container, principal container and realm sub-trees
+                ldap_kadmind_dn = "uid=kadmin-service,$LDAP_BASE_DN"
+
+                ldap_service_password_file = /etc/krb5kdc/service.keyfile
+                ldap_servers = $LDAP_MASTER_URL
+                ldap_conns_per_server = 5
+        }
